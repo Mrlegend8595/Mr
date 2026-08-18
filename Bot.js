@@ -4,25 +4,19 @@ const mineflayer = require('mineflayer');
 let consoleLogs = [];
 const MAX_LOGS = 100;
 
-// ======= EASY CONFIGURATION SECTION =======
-// Edit the values below to quickly configure the IP and port the bot connects to.
-// You can also override these with environment variables (recommended for deployments).
-// - Set MC_SERVER_HOST (string) and MC_SERVER_PORT (number) in your environment to override.
-// Examples:
-//   MC_SERVER_HOST=play.example.com
-//   MC_SERVER_PORT=25565
-// ------------------------------------------
-const EASY_CONFIG = {
-    // change this to your server IP or domain
-    host: process.env.nl-03.freezehost.pro || 'YOUR_SERVER_IP_OR_ADDRESS',
-    // change this to your server port (usually 25565)
-    port: Number(process.env.8148 || 25565,
-    // bot username
-    username: process.env.MC_BOT_USERNAME || 'GuardBot',
-    // mineflayer version (false = auto)
-    version: false
+// ======= SIMPLE SERVER CONFIGURATION =======
+// Only change these three values (or set the corresponding env vars):
+// - host: server IP or domain
+// - port: server port (default 25565)
+// - username: bot's username
+// You can also set the environment variables MC_SERVER_HOST, MC_SERVER_PORT, MC_BOT_USERNAME
+// -------------------------------------------
+const SERVER = {
+    host: process.env.MC_SERVER_HOST || 'YOUR_SERVER_IP_OR_ADDRESS',
+    port: Number(process.env.MC_SERVER_PORT) || 25565,
+    username: process.env.MC_BOT_USERNAME || 'GuardBot'
 };
-// ======= END CONFIGURATION SECTION =======
+// ======= END SIMPLE CONFIGURATION =======
 
 let bot;
 let reconnectTimer;
@@ -64,14 +58,14 @@ function getConsoleLogs() {
 }
 
 function createBot() {
-    logToConsole(`🤖 Starting bot: Connecting to ${EASY_CONFIG.host}:${EASY_CONFIG.port}...`, 'info');
+    logToConsole(`🤖 Starting bot: Connecting to ${SERVER.host}:${SERVER.port}...`, 'info');
     
     try {
         bot = mineflayer.createBot({
-            host: EASY_CONFIG.host,
-            port: EASY_CONFIG.port,
-            username: EASY_CONFIG.username,
-            version: EASY_CONFIG.version
+            host: SERVER.host,
+            port: SERVER.port,
+            username: SERVER.username,
+            version: false
         });
 
         // Triggers when the bot successfully logs into the server
@@ -215,6 +209,6 @@ module.exports = {
     getConsoleLogs,
     getBotStatus,
     createBot,
-    // expose EASY_CONFIG for other modules that may want to read the configured host/port
-    config: EASY_CONFIG
+    // expose SERVER for other modules that may want to read the configured host/port
+    serverConfig: SERVER
 };
