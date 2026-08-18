@@ -14,9 +14,9 @@ const MAX_LOGS = 100;
 // ------------------------------------------
 const EASY_CONFIG = {
     // change this to your server IP or domain
-    host: process.env.MC_SERVER_HOST || 'YOUR_SERVER_IP_OR_ADDRESS',
+    host: process.env.nl-03.freezehost.pro || 'YOUR_SERVER_IP_OR_ADDRESS',
     // change this to your server port (usually 25565)
-    port: Number(process.env.MC_SERVER_PORT) || 25565,
+    port: Number(process.env.8148 || 25565,
     // bot username
     username: process.env.MC_BOT_USERNAME || 'GuardBot',
     // mineflayer version (false = auto)
