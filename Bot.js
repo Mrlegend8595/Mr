@@ -4,13 +4,25 @@ const mineflayer = require('mineflayer');
 let consoleLogs = [];
 const MAX_LOGS = 100;
 
-// Configuration details
-const config = {
+// ======= EASY CONFIGURATION SECTION =======
+// Edit the values below to quickly configure the IP and port the bot connects to.
+// You can also override these with environment variables (recommended for deployments).
+// - Set MC_SERVER_HOST (string) and MC_SERVER_PORT (number) in your environment to override.
+// Examples:
+//   MC_SERVER_HOST=play.example.com
+//   MC_SERVER_PORT=25565
+// ------------------------------------------
+const EASY_CONFIG = {
+    // change this to your server IP or domain
     host: process.env.MC_SERVER_HOST || 'YOUR_SERVER_IP_OR_ADDRESS',
-    port: process.env.MC_SERVER_PORT || 25565,
+    // change this to your server port (usually 25565)
+    port: Number(process.env.MC_SERVER_PORT) || 25565,
+    // bot username
     username: process.env.MC_BOT_USERNAME || 'GuardBot',
+    // mineflayer version (false = auto)
     version: false
 };
+// ======= END CONFIGURATION SECTION =======
 
 let bot;
 let reconnectTimer;
@@ -52,14 +64,14 @@ function getConsoleLogs() {
 }
 
 function createBot() {
-    logToConsole(`🤖 Starting bot: Connecting to ${config.host}:${config.port}...`, 'info');
+    logToConsole(`🤖 Starting bot: Connecting to ${EASY_CONFIG.host}:${EASY_CONFIG.port}...`, 'info');
     
     try {
         bot = mineflayer.createBot({
-            host: config.host,
-            port: config.port,
-            username: config.username,
-            version: config.version
+            host: EASY_CONFIG.host,
+            port: EASY_CONFIG.port,
+            username: EASY_CONFIG.username,
+            version: EASY_CONFIG.version
         });
 
         // Triggers when the bot successfully logs into the server
@@ -202,5 +214,7 @@ module.exports = {
     bot,
     getConsoleLogs,
     getBotStatus,
-    createBot
+    createBot,
+    // expose EASY_CONFIG for other modules that may want to read the configured host/port
+    config: EASY_CONFIG
 };
