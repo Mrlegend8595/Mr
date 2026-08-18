@@ -4,19 +4,13 @@ const mineflayer = require('mineflayer');
 let consoleLogs = [];
 const MAX_LOGS = 100;
 
-// ======= SIMPLE SERVER CONFIGURATION =======
-// Only change these three values (or set the corresponding env vars):
-// - host: server IP or domain
-// - port: server port (default 25565)
-// - username: bot's username
-// You can also set the environment variables MC_SERVER_HOST, MC_SERVER_PORT, MC_BOT_USERNAME
-// -------------------------------------------
+// SIMPLE SERVER CONFIGURATION
+// Edit only these three values:
 const SERVER = {
-    host: process.env.MC_SERVER_HOST || 'YOUR_SERVER_IP_OR_ADDRESS',
-    port: Number(process.env.MC_SERVER_PORT) || 25565,
-    username: process.env.MC_BOT_USERNAME || 'GuardBot'
+    host: 'YOUR_SERVER_IP_OR_ADDRESS',
+    port: 25565,
+    username: 'GuardBot'
 };
-// ======= END SIMPLE CONFIGURATION =======
 
 let bot;
 let reconnectTimer;
@@ -209,6 +203,5 @@ module.exports = {
     getConsoleLogs,
     getBotStatus,
     createBot,
-    // expose SERVER for other modules that may want to read the configured host/port
     serverConfig: SERVER
 };
