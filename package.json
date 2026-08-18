@@ -1,0 +1,22 @@
+{
+  "name": "Mr",
+  "version": "1.0.0",
+  "description": "A Node.js bot application",
+  "main": "index.js",
+  "bin": {
+    "mr": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": ["bot", "minecraft"],
+  "author": "Mrlegend8595",
+  "license": "ISC",
+  "dependencies": {
+    "mineflayer": "^4.5.1"
+  },
+  "engines": {
+    "node": "18"
+  }
+}
