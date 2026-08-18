@@ -42,6 +42,12 @@ const htmlTemplate = `
             box-sizing: border-box;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -53,6 +59,7 @@ const htmlTemplate = `
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            width: 100%;
         }
 
         .header {
@@ -83,6 +90,7 @@ const htmlTemplate = `
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 30px;
+            width: 100%;
         }
 
         .card {
@@ -91,6 +99,7 @@ const htmlTemplate = `
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 30px;
             backdrop-filter: blur(10px);
+            overflow: hidden;
         }
 
         .info-grid {
@@ -161,9 +170,10 @@ const htmlTemplate = `
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            max-height: 600px;
+            height: 600px;
             border: 2px solid #667eea;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
         }
 
         .console-header {
@@ -175,16 +185,19 @@ const htmlTemplate = `
             justify-content: space-between;
             align-items: center;
             font-size: 18px;
+            flex-shrink: 0;
         }
 
         .console-logs {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px;
             font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 13px;
             line-height: 1.7;
             background: #0d1117;
+            width: 100%;
         }
 
         .log-entry {
@@ -194,12 +207,15 @@ const htmlTemplate = `
             display: flex;
             gap: 12px;
             margin-bottom: 4px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .log-timestamp {
             color: #8b949e;
             min-width: 110px;
             font-weight: 500;
+            flex-shrink: 0;
         }
 
         .log-type {
@@ -207,12 +223,14 @@ const htmlTemplate = `
             font-weight: 700;
             text-transform: uppercase;
             font-size: 11px;
+            flex-shrink: 0;
         }
 
         .log-message {
             flex: 1;
             word-break: break-word;
             color: #c9d1d9;
+            min-width: 0;
         }
 
         .log-entry.info { border-left-color: #79c0ff; }
@@ -234,6 +252,7 @@ const htmlTemplate = `
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            flex-shrink: 0;
         }
 
         .console-btn {
@@ -246,6 +265,7 @@ const htmlTemplate = `
             font-weight: 600;
             transition: all 0.3s;
             font-size: 13px;
+            white-space: nowrap;
         }
 
         .console-btn:hover {
@@ -356,7 +376,15 @@ const htmlTemplate = `
             }
 
             .console-container {
-                max-height: 400px;
+                height: 400px;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 15px;
             }
         }
 
@@ -481,9 +509,9 @@ const htmlTemplate = `
                         </div>
                     </div>
                     <div class="console-footer">
-                        <button class="console-btn" onclick="clearConsole()">🗑️ Clear Console</button>
-                        <button class="console-btn" onclick="scrollToBottom()">⬇️ Scroll to Bottom</button>
-                        <button class="console-btn" onclick="exportLogs()">💾 Export Logs</button>
+                        <button class="console-btn" onclick="clearConsole()">🗑️ Clear</button>
+                        <button class="console-btn" onclick="scrollToBottom()">⬇️ Scroll</button>
+                        <button class="console-btn" onclick="exportLogs()">💾 Export</button>
                         <button class="console-btn" onclick="autoScroll()">📌 Auto Scroll</button>
                     </div>
                 </div>
