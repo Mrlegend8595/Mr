@@ -58,49 +58,23 @@ const htmlTemplate = `
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 50px 40px;
+            padding: 40px 20px;
             text-align: center;
             margin-bottom: 30px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: float 20s linear infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(30px, 30px); }
-            100% { transform: translate(0, 0); }
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 2;
         }
 
         .header h1 {
-            font-size: 60px;
+            font-size: 48px;
             margin-bottom: 10px;
-            font-weight: 800;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
-            letter-spacing: 2px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .header p {
-            font-size: 20px;
-            opacity: 0.95;
+            font-size: 18px;
+            opacity: 0.9;
             font-weight: 300;
         }
 
@@ -112,18 +86,11 @@ const htmlTemplate = `
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 30px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
         }
 
         .info-grid {
@@ -134,51 +101,33 @@ const htmlTemplate = `
         }
 
         .info-card {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
             border-radius: 15px;
             text-align: center;
-            transition: all 0.3s;
-            border: 2px solid rgba(102, 126, 234, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .info-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
         }
 
         .info-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
-            border-color: rgba(102, 126, 234, 0.5);
-        }
-
-        .info-card:hover::before {
-            left: 100%;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
         }
 
         .info-label {
-            color: #667eea;
-            font-size: 11px;
-            font-weight: 700;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            font-weight: 600;
             text-transform: uppercase;
             margin-bottom: 8px;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
         }
 
         .info-value {
-            color: #333;
+            color: white;
             font-size: 24px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
+            font-weight: 700;
         }
 
         .status-badge {
@@ -186,52 +135,24 @@ const htmlTemplate = `
             padding: 10px 20px;
             border-radius: 25px;
             font-size: 14px;
-            font-weight: 700;
-            margin-top: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
+            font-weight: 600;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
         }
 
         .status-badge.connected {
             background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #1a4d2e;
-            box-shadow: 0 5px 15px rgba(132, 250, 176, 0.4);
+            color: #2d5016;
         }
 
         .status-badge.disconnected {
             background: linear-gradient(135deg, #fa8072 0%, #ff6347 100%);
             color: white;
-            box-shadow: 0 5px 15px rgba(250, 128, 114, 0.4);
         }
 
-        .status-badge::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -100%;
-            width: 10px;
-            height: 10px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 50%;
-            animation: pulse-dot 2s infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%, 100% { left: -100%; opacity: 0; }
-            50% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
-        }
-
-        .card-title {
-            color: #667eea;
-            margin-bottom: 25px;
-            font-size: 22px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .console-container {
@@ -242,78 +163,49 @@ const htmlTemplate = `
             flex-direction: column;
             max-height: 600px;
             border: 2px solid #667eea;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            grid-column: 1 / -1;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .console-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 18px 20px;
-            font-weight: 700;
+            padding: 20px;
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 18px;
         }
 
         .console-logs {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 13px;
-            line-height: 1.8;
+            line-height: 1.7;
             background: #0d1117;
         }
 
-        .console-logs::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .console-logs::-webkit-scrollbar-track {
-            background: #1c2128;
-        }
-
-        .console-logs::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 4px;
-        }
-
         .log-entry {
-            padding: 6px 0;
+            padding: 8px 0;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
             display: flex;
             gap: 12px;
-            border-bottom: 1px solid #21262d;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            margin-bottom: 4px;
         }
 
         .log-timestamp {
             color: #8b949e;
             min-width: 110px;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .log-type {
-            min-width: 65px;
+            min-width: 70px;
             font-weight: 700;
             text-transform: uppercase;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-align: center;
             font-size: 11px;
         }
 
@@ -323,35 +215,22 @@ const htmlTemplate = `
             color: #c9d1d9;
         }
 
-        .log-type.info { 
-            background: #0969da20;
-            color: #58a6ff;
-        }
+        .log-entry.info { border-left-color: #79c0ff; }
+        .log-entry.success { border-left-color: #3fb950; }
+        .log-entry.error { border-left-color: #f85149; }
+        .log-entry.warning { border-left-color: #d29922; }
+        .log-entry.debug { border-left-color: #a371f7; }
 
-        .log-type.success { 
-            background: #2da44e20;
-            color: #3fb950;
-        }
-
-        .log-type.error { 
-            background: #da373c20;
-            color: #f85149;
-        }
-
-        .log-type.warning { 
-            background: #d29922ff30;
-            color: #d29922;
-        }
-
-        .log-type.debug { 
-            background: #7928ca20;
-            color: #bc8ef7;
-        }
+        .log-type.info { color: #79c0ff; }
+        .log-type.success { color: #3fb950; }
+        .log-type.error { color: #f85149; }
+        .log-type.warning { color: #d29922; }
+        .log-type.debug { color: #a371f7; }
 
         .console-footer {
             background: #161b22;
-            padding: 15px 20px;
-            border-top: 1px solid #21262d;
+            padding: 12px 20px;
+            border-top: 1px solid #30363d;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
@@ -364,17 +243,14 @@ const htmlTemplate = `
             padding: 10px 18px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: 700;
+            font-weight: 600;
             transition: all 0.3s;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            font-size: 13px;
         }
 
         .console-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         .console-btn:active {
@@ -382,20 +258,17 @@ const htmlTemplate = `
         }
 
         .features {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 25px;
             border-radius: 15px;
             margin-top: 20px;
-            border: 1px solid rgba(102, 126, 234, 0.2);
+            color: white;
         }
 
         .features h3 {
-            color: #667eea;
-            margin-bottom: 18px;
+            color: white;
+            margin-bottom: 15px;
             font-size: 18px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .feature-list {
@@ -403,121 +276,155 @@ const htmlTemplate = `
         }
 
         .feature-list li {
-            color: #333;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             align-items: center;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-size: 14px;
         }
 
         .feature-list li:last-child {
             border-bottom: none;
         }
 
-        .feature-list li:hover {
-            padding-left: 10px;
-            color: #667eea;
-        }
-
         .feature-list li:before {
             content: "✓";
-            color: #667eea;
-            font-weight: 900;
-            margin-right: 15px;
-            font-size: 18px;
+            color: #84fab0;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 16px;
         }
 
-        .refresh-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #3fb950;
-            border-radius: 50%;
-            margin-left: 10px;
-            animation: blink 1s infinite;
-            box-shadow: 0 0 10px rgba(63, 185, 80, 0.5);
+        .console-full {
+            grid-column: 1 / -1;
         }
 
-        @keyframes blink {
-            0%, 50%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0.5; }
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        @media (max-width: 768px) {
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1024px) {
             .main-grid {
                 grid-template-columns: 1fr;
             }
 
-            .console-container {
+            .stats-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .console-full {
                 grid-column: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .stats-section {
+                grid-template-columns: 1fr;
             }
 
             .info-grid {
                 grid-template-columns: 1fr;
             }
 
-            .header h1 {
-                font-size: 42px;
-            }
-
-            .console-logs {
-                font-size: 11px;
-            }
-
-            .log-entry {
-                gap: 8px;
-            }
-
-            .log-timestamp {
-                min-width: 85px;
-            }
-
-            .log-type {
-                min-width: 55px;
-                font-size: 10px;
+            .console-container {
+                max-height: 400px;
             }
         }
 
-        .empty-console {
-            color: #666;
-            text-align: center;
-            padding: 40px;
-            opacity: 0.6;
-            font-style: italic;
+        .refresh-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #84fab0;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.4; }
+        }
+
+        .position-info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .position-info p {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .position-info p:last-child {
+            margin-bottom: 0;
+        }
+
+        .position-info strong {
+            color: #667eea;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <h1>⚙️ MR</h1>
-                <p>🎮 Minecraft Bot Dashboard & Control Panel</p>
-            </div>
+            <h1>⚙️ Mr - Minecraft Bot</h1>
+            <p>Professional Bot Management Dashboard</p>
         </div>
 
         <div class="main-grid">
             <div class="card">
-                <div class="card-title">📊 Server Status</div>
-                <div class="info-grid">
-                    <div class="info-card">
-                        <div class="info-label">Application</div>
-                        <div class="info-value">${pkg?.name || 'Mr'}</div>
+                <h2 style="color: #667eea; margin-bottom: 20px; font-size: 22px;">📊 Server Status</h2>
+                <div class="stats-section" style="margin-bottom: 20px;">
+                    <div class="stat-item">
+                        <div class="stat-label">Application</div>
+                        <div class="stat-value">${pkg?.name || 'Mr'}</div>
                     </div>
-                    <div class="info-card">
-                        <div class="info-label">Version</div>
-                        <div class="info-value">${pkg?.version || '1.0.0'}</div>
+                    <div class="stat-item">
+                        <div class="stat-label">Version</div>
+                        <div class="stat-value" id="appVersion">${pkg?.version || '1.0.0'}</div>
                     </div>
-                    <div class="info-card">
-                        <div class="info-label">Process ID</div>
-                        <div class="info-value">${process.pid}</div>
+                    <div class="stat-item">
+                        <div class="stat-label">Process ID</div>
+                        <div class="stat-value">${process.pid}</div>
                     </div>
-                    <div class="info-card">
-                        <div class="info-label">Uptime</div>
-                        <div class="info-value" id="uptime">--</div>
+                    <div class="stat-item">
+                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value" id="uptime">--</div>
                     </div>
                 </div>
                 <div style="text-align: center;">
@@ -526,61 +433,67 @@ const htmlTemplate = `
                 <div class="features">
                     <h3>🎯 Features</h3>
                     <ul class="feature-list">
-                        <li>🔄 Auto-Reconnection (15s)</li>
-                        <li>⏰ Anti-AFK System (45s)</li>
-                        <li>📡 Real-time Console</li>
-                        <li>🎮 Bot Monitoring</li>
-                        <li>❤️ Health Tracking</li>
+                        <li>Auto-Reconnection (15s)</li>
+                        <li>Anti-AFK System (45s)</li>
+                        <li>Real-time Console</li>
+                        <li>Live Bot Monitoring</li>
+                        <li>Health Tracking</li>
                     </ul>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-title">🤖 Bot Status</div>
+                <h2 style="color: #667eea; margin-bottom: 20px; font-size: 22px;">🤖 Bot Status</h2>
                 <div class="info-grid">
                     <div class="info-card">
                         <div class="info-label">Connection</div>
-                        <div class="info-value" id="botConnection" style="font-size: 18px;">--</div>
+                        <div class="info-value" id="botConnection">--</div>
                     </div>
                     <div class="info-card">
                         <div class="info-label">Username</div>
                         <div class="info-value" id="botUsername">--</div>
                     </div>
                     <div class="info-card">
-                        <div class="info-label">Health</div>
+                        <div class="info-label">❤️ Health</div>
                         <div class="info-value" id="botHealth">--</div>
                     </div>
                     <div class="info-card">
-                        <div class="info-label">Food</div>
+                        <div class="info-label">🍖 Food</div>
                         <div class="info-value" id="botFood">--</div>
                     </div>
                 </div>
-                <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 12px; margin-top: 15px; border-left: 4px solid #667eea; border: 2px solid rgba(102, 126, 234, 0.2);">
-                    <p style="color: #667eea; font-size: 13px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">📍 Position</p>
-                    <p style="color: #333; font-size: 16px; margin-bottom: 12px; font-weight: 600;" id="botPosition">--</p>
-                    <p style="color: #667eea; font-size: 13px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">🎮 Game Mode</p>
-                    <p style="color: #333; font-size: 16px; font-weight: 600;" id="botGameMode">--</p>
+                <div class="position-info">
+                    <p><strong>📍 Position:</strong> <span id="botPosition">Not connected</span></p>
+                    <p><strong>🎮 Game Mode:</strong> <span id="botGameMode">--</span></p>
                 </div>
             </div>
 
-            <div class="console-container">
-                <div class="console-header">
-                    <span>🖥️ Bot Console <span class="refresh-indicator"></span></span>
-                    <span style="font-size: 12px; opacity: 0.8;">LIVE ACTIVITY</span>
-                </div>
-                <div class="console-logs" id="consoleLogs">
-                    <div class="empty-console">🔄 Loading bot console...</div>
-                </div>
-                <div class="console-footer">
-                    <button class="console-btn" onclick="scrollToBottom()">⬇️ Scroll to Bottom</button>
-                    <button class="console-btn" onclick="clearConsole()">🗑️ Clear Console</button>
-                    <button class="console-btn" onclick="exportLogs()">💾 Export Logs</button>
+            <div class="card console-full">
+                <div class="console-container">
+                    <div class="console-header">
+                        <span>🖥️ Bot Console <span class="refresh-indicator"></span></span>
+                        <span style="font-size: 12px; opacity: 0.8;">Updates every 5s</span>
+                    </div>
+                    <div class="console-logs" id="consoleLogs">
+                        <div style="color: #6e7681; text-align: center; padding: 20px; line-height: 1.8;">
+                            📡 Connecting to bot service...<br>
+                            <span style="font-size: 11px; color: #8b949e;">Waiting for log stream</span>
+                        </div>
+                    </div>
+                    <div class="console-footer">
+                        <button class="console-btn" onclick="clearConsole()">🗑️ Clear Console</button>
+                        <button class="console-btn" onclick="scrollToBottom()">⬇️ Scroll to Bottom</button>
+                        <button class="console-btn" onclick="exportLogs()">💾 Export Logs</button>
+                        <button class="console-btn" onclick="autoScroll()">📌 Auto Scroll</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        let autoScrollEnabled = true;
+        
         async function updateBotStatus() {
             try {
                 const response = await fetch('/api/bot');
@@ -588,41 +501,42 @@ const htmlTemplate = `
                 
                 if (data.status) {
                     const status = data.status;
-                    document.getElementById('botConnection').textContent = status.connected ? '✓ Connected' : '✗ Offline';
-                    document.getElementById('botConnection').style.color = status.connected ? '#3fb950' : '#f85149';
+                    document.getElementById('botConnection').textContent = status.connected ? '✅ Connected' : '❌ Disconnected';
                     document.getElementById('botUsername').textContent = status.username || '--';
-                    document.getElementById('botHealth').textContent = (status.health || 0).toFixed(1) + ' ❤️';
-                    document.getElementById('botFood').textContent = (status.food || 0).toFixed(1) + ' 🍖';
+                    document.getElementById('botHealth').textContent = (status.health || 0).toFixed(1) + '❤️';
+                    document.getElementById('botFood').textContent = (status.food || 0).toFixed(1) + '🍖';
                     
                     if (status.position) {
                         document.getElementById('botPosition').textContent = 
                             \`X: \${status.position.x} | Y: \${status.position.y} | Z: \${status.position.z}\`;
                     } else {
-                        document.getElementById('botPosition').textContent = '-- Connecting --';
+                        document.getElementById('botPosition').textContent = 'Not connected';
                     }
                     
                     document.getElementById('botGameMode').textContent = status.gameMode || '--';
                 }
 
-                if (data.logs && data.logs.length > 0) {
+                if (data.logs) {
                     const consoleLogs = document.getElementById('consoleLogs');
                     consoleLogs.innerHTML = '';
                     
-                    data.logs.forEach(log => {
-                        const logDiv = document.createElement('div');
-                        logDiv.className = 'log-entry';
-                        logDiv.innerHTML = \`
-                            <span class="log-timestamp">\${log.timestamp}</span>
-                            <span class="log-type \${log.type}">\${log.type}</span>
-                            <span class="log-message">\${escapeHtml(log.message)}</span>
-                        \`;
-                        consoleLogs.appendChild(logDiv);
-                    });
-                    
-                    scrollToBottom();
-                } else {
-                    if (document.getElementById('consoleLogs').innerHTML.includes('Loading')) {
-                        document.getElementById('consoleLogs').innerHTML = '<div class="empty-console">Waiting for bot activity...</div>';
+                    if (data.logs.length === 0) {
+                        consoleLogs.innerHTML = '<div style="color: #6e7681; padding: 20px; text-align: center;">No logs yet...</div>';
+                    } else {
+                        data.logs.forEach(log => {
+                            const logDiv = document.createElement('div');
+                            logDiv.className = 'log-entry ' + log.type;
+                            logDiv.innerHTML = \`
+                                <span class="log-timestamp">[\${log.timestamp}]</span>
+                                <span class="log-type \${log.type}">\${log.type}</span>
+                                <span class="log-message">\${escapeHtml(log.message)}</span>
+                            \`;
+                            consoleLogs.appendChild(logDiv);
+                        });
+                        
+                        if (autoScrollEnabled) {
+                            scrollToBottom();
+                        }
                     }
                 }
             } catch (err) {
@@ -643,18 +557,29 @@ const htmlTemplate = `
 
         function scrollToBottom() {
             const consoleLogs = document.getElementById('consoleLogs');
-            consoleLogs.scrollTop = consoleLogs.scrollHeight;
+            setTimeout(() => {
+                consoleLogs.scrollTop = consoleLogs.scrollHeight;
+            }, 0);
         }
 
         function clearConsole() {
-            document.getElementById('consoleLogs').innerHTML = '<div class="empty-console">Console cleared by user</div>';
+            document.getElementById('consoleLogs').innerHTML = '<div style="color: #6e7681; padding: 20px;">Console cleared at ' + new Date().toLocaleTimeString() + '</div>';
+        }
+
+        function autoScroll() {
+            autoScrollEnabled = !autoScrollEnabled;
+            alert(autoScrollEnabled ? '📌 Auto scroll enabled' : '📌 Auto scroll disabled');
         }
 
         function exportLogs() {
-            const consoleLogs = document.getElementById('consoleLogs').innerText;
+            const consoleLogs = document.getElementById('consoleLogs');
+            const text = Array.from(consoleLogs.querySelectorAll('.log-entry')).map(entry => {
+                return entry.innerText;
+            }).join('\\n');
+            
             const element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(consoleLogs));
-            element.setAttribute('download', 'bot_logs_' + new Date().toISOString().slice(0, 10) + '.txt');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', 'bot_logs_' + new Date().toISOString().split('T')[0] + '.txt');
             element.style.display = 'none';
             document.body.appendChild(element);
             element.click();
@@ -677,8 +602,8 @@ const htmlTemplate = `
         updateBotStatus();
         updateUptime();
         
-        // Update every second
-        setInterval(updateBotStatus, 1000);
+        // Update every 5 seconds for console and bot status, every 1 second for uptime
+        setInterval(updateBotStatus, 5000);
         setInterval(updateUptime, 1000);
     </script>
 </body>
