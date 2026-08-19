@@ -22,7 +22,8 @@
     "uuid-1345": "^0.99.7",
     "lodash.merge": "^4.6.2",
     "minecraft-data": "^3.62.0",
-    "aes-js": "^3.1.2"
+    "aes-js": "^3.1.2",
+    "yggdrasil": "^1.8.0"
   },
   "engines": {
     "node": ">=22"
