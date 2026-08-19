@@ -7,8 +7,8 @@ const MAX_LOGS = 100;
 // SIMPLE SERVER CONFIGURATION
 // Edit only these three values:
 const SERVER = {
-    host: 'YOUR_SERVER_IP_OR_ADDRESS',
-    port: 25565,
+    host: 'nl-03.freezehost.pro',
+    port: 8148,
     username: 'GuardBot'
 };
 
