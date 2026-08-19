@@ -217,10 +217,10 @@ let uptimeChart, healthChart;
 
 function initCharts(){
   const ctx = document.getElementById('uptimeChart').getContext('2d');
-  uptimeChart = new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Uptime (s)',data:[],borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',tension:0.3}]},options:{scales:{x:{display:false}}}});
+  uptimeChart = new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Uptime (s)',data:[],borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',tension:0.3}]},options:{scales:{x:{d[...]
 
   const ctx2 = document.getElementById('healthChart').getContext('2d');
-  healthChart = new Chart(ctx2,{type:'line',data:{labels:[],datasets:[{label:'Health',data:[],borderColor:'#34d399',backgroundColor:'rgba(34,197,94,0.06)',tension:0.3}]},options:{scales:{x:{display:false}}}});
+  healthChart = new Chart(ctx2,{type:'line',data:{labels:[],datasets:[{label:'Health',data:[],borderColor:'#34d399',backgroundColor:'rgba(34,197,94,0.06)',tension:0.3}]},options:{scales:{x:{displ[...]
 }
 
 function updateCharts(metrics){
@@ -241,7 +241,7 @@ async function refreshAll(){
     document.getElementById('uptimeLarge').textContent = s.connected ? 'Connected' : 'Disconnected';
     document.getElementById('healthLarge').textContent = (s.health || 0) + ' ❤️';
     document.getElementById('playersLarge').textContent = '--';
-    document.getElementById('botInfo').textContent = `User: ${s.username || '--'} • Status: ${s.status || '--'}`;
+    document.getElementById('botInfo').textContent = 'User: ' + (s.username || '--') + ' • Status: ' + (s.status || '--');
     document.getElementById('connectionBadge').textContent = s.connected ? 'Connected' : 'Disconnected';
   }
 
