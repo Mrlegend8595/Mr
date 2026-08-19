@@ -258,7 +258,7 @@ function renderLogs(logs){
   if (!logs || logs.length===0) { el.textContent = 'No logs yet'; return; }
   const filter = document.getElementById('filterLog').value.toLowerCase();
   logs.slice().reverse().forEach(l=>{
-    const txt = `[${l.timestamp}] ${l.type.toUpperCase()} ${l.message}`;
+    const txt = '[' + (l.timestamp || '') + '] ' + (l.type && l.type.toUpperCase ? l.type.toUpperCase() : (l.type || '')) + ' ' + (l.message || '');
     if (filter && !txt.toLowerCase().includes(filter)) return;
     const row = document.createElement('div');
     row.textContent = txt; row.style.padding='6px 0'; row.style.borderBottom='1px solid rgba(255,255,255,0.02)';
