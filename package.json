@@ -14,7 +14,8 @@
   "author": "Mrlegend8595",
   "license": "ISC",
   "dependencies": {
-    "mineflayer": "^4.5.1"
+    "mineflayer": "^4.37.1",
+    "minecraft-protocol": "^1.66.2"
   },
   "engines": {
     "node": ">=22"
