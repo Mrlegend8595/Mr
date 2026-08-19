@@ -16,7 +16,7 @@
   "dependencies": {
     "mineflayer": "^4.37.1",
     "minecraft-protocol": "^1.66.2",
-    "protodef": "^0.7.0"
+    "protodef": "^1.17.0"
   },
   "engines": {
     "node": ">=22"
