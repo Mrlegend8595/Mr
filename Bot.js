@@ -7,8 +7,8 @@ const MAX_LOGS = 100;
 // SIMPLE SERVER CONFIGURATION
 // Edit only these three values:
 const SERVER = {
-    host: 'nl-03.freezehost.pro',
-    port: 8148,
+    host: 'Ghopghip.aternos.me',
+    port: 33526,
     username: 'GuardBot'
 };
 
