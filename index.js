@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-// index.js — Node.js server with Bot Console Dashboard
-// - Starts a small HTTP server on PORT (default 3000)
-// - GET / returns an attractive dashboard with bot console
-// - GET /api returns minimal repo/package info as JSON
-// - GET /api/bot returns bot status and console logs
+// index.js — Redesigned dashboard (feat/dashboard-redesign merged).
+// - Serves a modern dashboard UI with charts and controls
+// - Adds /api/metrics and POST /api/bot/action (token protected via DASHBOARD_TOKEN)
 
 'use strict';
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const botModule = require('./Bot');
 
 const PORT = process.env.PORT || 3000;
+const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || '';
 
 function getPackageInfo() {
   try {
@@ -28,617 +28,350 @@ function getPackageInfo() {
 
 const pkg = getPackageInfo();
 
-const htmlTemplate = `
-<!DOCTYPE html>
+// In-memory metrics (server samples periodically)
+const METRICS = {
+  uptimeSeries: [], // { t: timestamp, v: seconds }
+  healthSeries: [], // { t, v }
+  samples: 0,
+  maxPoints: 120
+};
+
+function sampleMetrics() {
+  const t = Date.now();
+  const uptime = Math.floor(process.uptime());
+  const botStatus = botModule.getBotStatus ? botModule.getBotStatus() : null;
+  const health = botStatus && typeof botStatus.health === 'number' ? botStatus.health : null;
+
+  METRICS.uptimeSeries.push({ t, v: uptime });
+  if (health !== null) METRICS.healthSeries.push({ t, v: health });
+  METRICS.samples++;
+
+  // trim
+  if (METRICS.uptimeSeries.length > METRICS.maxPoints) METRICS.uptimeSeries.shift();
+  if (METRICS.healthSeries.length > METRICS.maxPoints) METRICS.healthSeries.shift();
+}
+
+// sample every 5 seconds
+setInterval(sampleMetrics, 5000);
+// initial sample
+sampleMetrics();
+
+const htmlTemplate = `<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mr - Minecraft Bot Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow-x: hidden;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-            margin-bottom: 30px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .header h1 {
-            font-size: 48px;
-            margin-bottom: 10px;
-            font-weight: 700;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .header p {
-            font-size: 18px;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-            width: 100%;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            overflow: hidden;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-        }
-
-        .info-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .info-label {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-
-        .info-value {
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 10px;
-            animation: pulse 2s infinite;
-        }
-
-        .status-badge.connected {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #2d5016;
-        }
-
-        .status-badge.disconnected {
-            background: linear-gradient(135deg, #fa8072 0%, #ff6347 100%);
-            color: white;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .console-container {
-            background: #0d1117;
-            border-radius: 15px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 600px;
-            border: 2px solid #667eea;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            width: 100%;
-        }
-
-        .console-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .console-logs {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 20px;
-            font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 13px;
-            line-height: 1.7;
-            background: #0d1117;
-            width: 100%;
-        }
-
-        .log-entry {
-            padding: 8px 0;
-            border-left: 3px solid transparent;
-            padding-left: 10px;
-            display: flex;
-            gap: 12px;
-            margin-bottom: 4px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        .log-timestamp {
-            color: #8b949e;
-            min-width: 110px;
-            font-weight: 500;
-            flex-shrink: 0;
-        }
-
-        .log-type {
-            min-width: 70px;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 11px;
-            flex-shrink: 0;
-        }
-
-        .log-message {
-            flex: 1;
-            word-break: break-word;
-            color: #c9d1d9;
-            min-width: 0;
-        }
-
-        .log-entry.info { border-left-color: #79c0ff; }
-        .log-entry.success { border-left-color: #3fb950; }
-        .log-entry.error { border-left-color: #f85149; }
-        .log-entry.warning { border-left-color: #d29922; }
-        .log-entry.debug { border-left-color: #a371f7; }
-
-        .log-type.info { color: #79c0ff; }
-        .log-type.success { color: #3fb950; }
-        .log-type.error { color: #f85149; }
-        .log-type.warning { color: #d29922; }
-        .log-type.debug { color: #a371f7; }
-
-        .console-footer {
-            background: #161b22;
-            padding: 12px 20px;
-            border-top: 1px solid #30363d;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            flex-shrink: 0;
-        }
-
-        .console-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .console-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .console-btn:active {
-            transform: translateY(0);
-        }
-
-        .features {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 25px;
-            border-radius: 15px;
-            margin-top: 20px;
-            color: white;
-        }
-
-        .features h3 {
-            color: white;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .feature-list {
-            list-style: none;
-        }
-
-        .feature-list li {
-            color: rgba(255, 255, 255, 0.9);
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        .feature-list li:last-child {
-            border-bottom: none;
-        }
-
-        .feature-list li:before {
-            content: "✓";
-            color: #84fab0;
-            font-weight: bold;
-            margin-right: 12px;
-            font-size: 16px;
-        }
-
-        .console-full {
-            grid-column: 1 / -1;
-        }
-
-        .stats-section {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-item {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            opacity: 0.8;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 22px;
-            font-weight: 700;
-            margin-top: 5px;
-        }
-
-        @media (max-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-section {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .console-full {
-                grid-column: 1;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 36px;
-            }
-
-            .stats-section {
-                grid-template-columns: 1fr;
-            }
-
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .console-container {
-                height: 400px;
-            }
-
-            body {
-                padding: 10px;
-            }
-
-            .card {
-                padding: 15px;
-            }
-        }
-
-        .refresh-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #84fab0;
-            border-radius: 50%;
-            margin-left: 10px;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 50%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0.4; }
-        }
-
-        .position-info {
-            background: rgba(102, 126, 234, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-            border-left: 4px solid #667eea;
-        }
-
-        .position-info p {
-            color: #555;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .position-info p:last-child {
-            margin-bottom: 0;
-        }
-
-        .position-info strong {
-            color: #667eea;
-            font-weight: 600;
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mr - Bot Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#0b1020;--card:#0f1724;--muted:#94a3b8;--accent:#7c3aed;--glass:rgba(255,255,255,0.04)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+body{background:linear-gradient(180deg,#071021 0%,#0b1020 50%);color:#e6eef8}
+.app{display:flex;height:100vh;gap:18px;padding:18px}
+.sidebar{width:88px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center}
+.logo{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),#5eead4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#071021}
+.nav{margin-top:14px;display:flex;flex-direction:column;gap:10px;width:100%}
+.nav button{background:transparent;border:none;color:var(--muted);padding:10px;border-radius:10px;cursor:pointer;width:100%}
+.nav button.active{background:var(--glass);color:#fff}
+.main{flex:1;display:flex;flex-direction:column}
+.topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:16px;min-height:120px}
+.metrics{display:flex;gap:12px}
+.metric{flex:1;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);padding:12px;border-radius:10px}
+.console{height:360px;display:flex;flex-direction:column}
+.console-logs{flex:1;overflow:auto;padding:12px;background:#06101a;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+.controls{display:flex;gap:8px;margin-top:8px}
+.btn{background:linear-gradient(90deg,var(--accent),#4f46e5);border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+.panel{display:flex;flex-direction:column;gap:12px}
+.footer{margin-top:auto;padding:10px;text-align:center;color:var(--muted)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.sidebar{display:none}.topbar{border-radius:8px}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚙️ Mr - Minecraft Bot</h1>
-            <p>Professional Bot Management Dashboard</p>
+<div class="app">
+  <aside class="sidebar" aria-hidden>
+    <div class="logo">MR</div>
+    <nav class="nav">
+      <button id="nav-dashboard" class="active">Dash</button>
+      <button id="nav-console">Console</button>
+      <button id="nav-settings">Settings</button>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;gap:12px;align-items:center">
+        <h2 style="margin:0">Mr — Bot Dashboard</h2>
+        <div style="color:var(--muted);font-size:13px">${pkg?.name || 'Mr'} • v${pkg?.version || '1.0.0'}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="refreshBtn" class="btn btn-small">Refresh</button>
+        <div id="connectionBadge" style="padding:8px 10px;background:#05202a;border-radius:8px;color:#7eead0;font-weight:600">Connecting...</div>
+      </div>
+    </header>
+
+    <section id="dashboardView">
+      <div class="grid">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Live Metrics</strong>
+            <small style="color:var(--muted)">Updated every 5s</small>
+          </div>
+          <div class="metrics" style="margin-top:12px">
+            <div class="metric">
+              <div style="color:var(--muted);font-size:12px">Uptime</div>
+              <div id="uptimeLarge" style="font-size:18px;font-weight:800">--</div>
+            </div>
+            <div class="metric">
+              <div style="color:var(--muted);font-size:12px">Bot Health</div>
+              <div id="healthLarge" style="font-size:18px;font-weight:800">--</div>
+            </div>
+            <div class="metric">
+              <div style="color:var(--muted);font-size:12px">Players</div>
+              <div id="playersLarge" style="font-size:18px;font-weight:800">--</div>
+            </div>
+          </div>
+          <canvas id="uptimeChart" style="margin-top:12px;max-height:160px"></canvas>
         </div>
 
-        <div class="main-grid">
-            <div class="card">
-                <h2 style="color: #667eea; margin-bottom: 20px; font-size: 22px;">📊 Server Status</h2>
-                <div class="stats-section" style="margin-bottom: 20px;">
-                    <div class="stat-item">
-                        <div class="stat-label">Application</div>
-                        <div class="stat-value">${pkg?.name || 'Mr'}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Version</div>
-                        <div class="stat-value" id="appVersion">${pkg?.version || '1.0.0'}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Process ID</div>
-                        <div class="stat-value">${process.pid}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Uptime</div>
-                        <div class="stat-value" id="uptime">--</div>
-                    </div>
-                </div>
-                <div style="text-align: center;">
-                    <div class="status-badge connected">✓ Server Running</div>
-                </div>
-                <div class="features">
-                    <h3>🎯 Features</h3>
-                    <ul class="feature-list">
-                        <li>Auto-Reconnection (15s)</li>
-                        <li>Anti-AFK System (45s)</li>
-                        <li>Real-time Console</li>
-                        <li>Live Bot Monitoring</li>
-                        <li>Health Tracking</li>
-                    </ul>
-                </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Bot Status</strong>
+            <small style="color:var(--muted)">Realtime</small>
+          </div>
+          <div style="margin-top:12px">
+            <div id="botInfo" style="color:var(--muted);font-size:13px">Loading...</div>
+            <div style="margin-top:12px">
+              <button class="btn" onclick="botAction('reconnect')">Reconnect</button>
+              <button class="btn ghost" onclick="botAction('start')">Start</button>
+              <button class="btn ghost" onclick="botAction('stop')">Stop</button>
             </div>
-
-            <div class="card">
-                <h2 style="color: #667eea; margin-bottom: 20px; font-size: 22px;">🤖 Bot Status</h2>
-                <div class="info-grid">
-                    <div class="info-card">
-                        <div class="info-label">Connection</div>
-                        <div class="info-value" id="botConnection">--</div>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">Username</div>
-                        <div class="info-value" id="botUsername">--</div>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">❤️ Health</div>
-                        <div class="info-value" id="botHealth">--</div>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">🍖 Food</div>
-                        <div class="info-value" id="botFood">--</div>
-                    </div>
-                </div>
-                <div class="position-info">
-                    <p><strong>📍 Position:</strong> <span id="botPosition">Not connected</span></p>
-                    <p><strong>🎮 Game Mode:</strong> <span id="botGameMode">--</span></p>
-                </div>
-            </div>
-
-            <div class="card console-full">
-                <div class="console-container">
-                    <div class="console-header">
-                        <span>🖥️ Bot Console <span class="refresh-indicator"></span></span>
-                        <span style="font-size: 12px; opacity: 0.8;">Updates every 5s</span>
-                    </div>
-                    <div class="console-logs" id="consoleLogs">
-                        <div style="color: #6e7681; text-align: center; padding: 20px; line-height: 1.8;">
-                            📡 Connecting to bot service...<br>
-                            <span style="font-size: 11px; color: #8b949e;">Waiting for log stream</span>
-                        </div>
-                    </div>
-                    <div class="console-footer">
-                        <button class="console-btn" onclick="clearConsole()">🗑️ Clear</button>
-                        <button class="console-btn" onclick="scrollToBottom()">⬇️ Scroll</button>
-                        <button class="console-btn" onclick="exportLogs()">💾 Export</button>
-                        <button class="console-btn" onclick="autoScroll()">📌 Auto Scroll</button>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
-    </div>
 
-    <script>
-        let autoScrollEnabled = true;
-        
-        async function updateBotStatus() {
-            try {
-                const response = await fetch('/api/bot');
-                const data = await response.json();
-                
-                if (data.status) {
-                    const status = data.status;
-                    document.getElementById('botConnection').textContent = status.connected ? '✅ Connected' : '❌ Disconnected';
-                    document.getElementById('botUsername').textContent = status.username || '--';
-                    document.getElementById('botHealth').textContent = (status.health || 0).toFixed(1) + '❤️';
-                    document.getElementById('botFood').textContent = (status.food || 0).toFixed(1) + '🍖';
-                    
-                    if (status.position) {
-                        document.getElementById('botPosition').textContent = 
-                            \`X: \${status.position.x} | Y: \${status.position.y} | Z: \${status.position.z}\`;
-                    } else {
-                        document.getElementById('botPosition').textContent = 'Not connected';
-                    }
-                    
-                    document.getElementById('botGameMode').textContent = status.gameMode || '--';
-                }
+        <div class="card console">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Console</strong>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="filterLog" placeholder="filter" style="padding:6px;border-radius:8px;background:#06131a;border:1px solid rgba(255,255,255,0.02);color:#cfe8ff" />
+              <button class="btn ghost" id="clearBtn">Clear</button>
+            </div>
+          </div>
+          <div class="console-logs" id="consoleLogs">Loading logs...</div>
+          <div class="controls">
+            <input id="cmdInput" placeholder="Enter command (not wired)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:#06131a;color:#e6eef8" />
+            <button class="btn" id="sendCmd">Send</button>
+          </div>
+        </div>
+      </div>
 
-                if (data.logs) {
-                    const consoleLogs = document.getElementById('consoleLogs');
-                    consoleLogs.innerHTML = '';
-                    
-                    if (data.logs.length === 0) {
-                        consoleLogs.innerHTML = '<div style="color: #6e7681; padding: 20px; text-align: center;">No logs yet...</div>';
-                    } else {
-                        data.logs.forEach(log => {
-                            const logDiv = document.createElement('div');
-                            logDiv.className = 'log-entry ' + log.type;
-                            logDiv.innerHTML = \`
-                                <span class="log-timestamp">[\${log.timestamp}]</span>
-                                <span class="log-type \${log.type}">\${log.type}</span>
-                                <span class="log-message">\${escapeHtml(log.message)}</span>
-                            \`;
-                            consoleLogs.appendChild(logDiv);
-                        });
-                        
-                        if (autoScrollEnabled) {
-                            scrollToBottom();
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('Error updating status:', err);
-            }
-        }
+      <div style="display:flex;gap:16px;margin-top:16px">
+        <div class="card" style="flex:1">
+          <strong>Health History</strong>
+          <canvas id="healthChart" style="margin-top:8px;max-height:140px"></canvas>
+        </div>
+        <div class="card" style="width:360px">
+          <strong>Settings</strong>
+          <div class="panel" style="margin-top:12px">
+            <label style="font-size:13px;color:var(--muted)">Dashboard token (for controls)</label>
+            <input id="tokenInput" placeholder="enter token to enable" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:#071728;color:#e6eef8" />
+            <small style="color:var(--muted)">Token is compared to DASHBOARD_TOKEN env on server</small>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
+    <footer class="footer">Built-in dashboard • Merge: feat/dashboard-redesign</footer>
+  </main>
+</div>
 
-        function scrollToBottom() {
-            const consoleLogs = document.getElementById('consoleLogs');
-            setTimeout(() => {
-                consoleLogs.scrollTop = consoleLogs.scrollHeight;
-            }, 0);
-        }
+<script>
+const state = { token: '' };
 
-        function clearConsole() {
-            document.getElementById('consoleLogs').innerHTML = '<div style="color: #6e7681; padding: 20px;">Console cleared at ' + new Date().toLocaleTimeString() + '</div>';
-        }
+function humanTime(s){
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return `${h}h ${m}m ${sec}s`;
+}
 
-        function autoScroll() {
-            autoScrollEnabled = !autoScrollEnabled;
-            alert(autoScrollEnabled ? '📌 Auto scroll enabled' : '📌 Auto scroll disabled');
-        }
+async function fetchBot() {
+  try{
+    const res = await fetch('/api/bot');
+    if (!res.ok) throw new Error('failed');
+    return await res.json();
+  }catch(e){return null}
+}
 
-        function exportLogs() {
-            const consoleLogs = document.getElementById('consoleLogs');
-            const text = Array.from(consoleLogs.querySelectorAll('.log-entry')).map(entry => {
-                return entry.innerText;
-            }).join('\\n');
-            
-            const element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-            element.setAttribute('download', 'bot_logs_' + new Date().toISOString().split('T')[0] + '.txt');
-            element.style.display = 'none';
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-        }
+async function fetchMetrics(){
+  try{
+    const res = await fetch('/api/metrics');
+    return res.ok ? await res.json() : null;
+  }catch(e){return null}
+}
 
-        function updateUptime() {
-            fetch('/api')
-                .then(res => res.json())
-                .then(data => {
-                    const h = Math.floor(data.uptime / 3600);
-                    const m = Math.floor((data.uptime % 3600) / 60);
-                    const s = Math.floor(data.uptime % 60);
-                    document.getElementById('uptime').textContent = 
-                        \`\${h}h \${m}m \${s}s\`;
-                });
-        }
-        
-        // Initial load
-        updateBotStatus();
-        updateUptime();
-        
-        // Update every 5 seconds for console and bot status, every 1 second for uptime
-        setInterval(updateBotStatus, 5000);
-        setInterval(updateUptime, 1000);
-    </script>
+let uptimeChart, healthChart;
+
+function initCharts(){
+  const ctx = document.getElementById('uptimeChart').getContext('2d');
+  uptimeChart = new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Uptime (s)',data:[],borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',tension:0.3}]},options:{scales:{x:{display:false}}}});
+
+  const ctx2 = document.getElementById('healthChart').getContext('2d');
+  healthChart = new Chart(ctx2,{type:'line',data:{labels:[],datasets:[{label:'Health',data:[],borderColor:'#34d399',backgroundColor:'rgba(34,197,94,0.06)',tension:0.3}]},options:{scales:{x:{display:false}}}});
+}
+
+function updateCharts(metrics){
+  if (!metrics) return;
+  const upLabels = metrics.uptimeSeries.map(p=>new Date(p.t).toLocaleTimeString());
+  const upData = metrics.uptimeSeries.map(p=>p.v);
+  uptimeChart.data.labels = upLabels; uptimeChart.data.datasets[0].data = upData; uptimeChart.update();
+
+  const hLabels = metrics.healthSeries.map(p=>new Date(p.t).toLocaleTimeString());
+  const hData = metrics.healthSeries.map(p=>p.v);
+  healthChart.data.labels = hLabels; healthChart.data.datasets[0].data = hData; healthChart.update();
+}
+
+async function refreshAll(){
+  const bot = await fetchBot();
+  if (bot && bot.status){
+    const s = bot.status;
+    document.getElementById('uptimeLarge').textContent = s.connected ? 'Connected' : 'Disconnected';
+    document.getElementById('healthLarge').textContent = (s.health || 0) + ' ❤️';
+    document.getElementById('playersLarge').textContent = '--';
+    document.getElementById('botInfo').textContent = `User: ${s.username || '--'} • Status: ${s.status || '--'}`;
+    document.getElementById('connectionBadge').textContent = s.connected ? 'Connected' : 'Disconnected';
+  }
+
+  const metrics = await fetchMetrics();
+  updateCharts(metrics);
+
+  const logs = bot && bot.logs ? bot.logs : (bot && bot.logs) || [];
+  renderLogs(logs);
+}
+
+function renderLogs(logs){
+  const el = document.getElementById('consoleLogs');
+  el.innerHTML = '';
+  if (!logs || logs.length===0) { el.textContent = 'No logs yet'; return; }
+  const filter = document.getElementById('filterLog').value.toLowerCase();
+  logs.slice().reverse().forEach(l=>{
+    const txt = `[${l.timestamp}] ${l.type.toUpperCase()} ${l.message}`;
+    if (filter && !txt.toLowerCase().includes(filter)) return;
+    const row = document.createElement('div');
+    row.textContent = txt; row.style.padding='6px 0'; row.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    el.appendChild(row);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+async function botAction(action){
+  try{
+    const res = await fetch('/api/bot/action',{
+      method:'POST',headers:{'Content-Type':'application/json','x-dashboard-token': state.token },body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    alert(data.message || 'ok');
+    await refreshAll();
+  }catch(e){alert('Action failed: '+e.message)}
+}
+
+function wireUI(){
+  document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+  document.getElementById('clearBtn').addEventListener('click', ()=>{document.getElementById('consoleLogs').innerHTML='';});
+  document.getElementById('filterLog').addEventListener('input', refreshAll);
+  document.getElementById('tokenInput').addEventListener('change', (e)=>{ state.token = e.target.value; });
+  document.getElementById('sendCmd').addEventListener('click', ()=>{ alert('Command sending not implemented'); });
+}
+
+// initial
+initCharts(); wireUI(); refreshAll();
+setInterval(refreshAll,5000);
+</script>
 </body>
-</html>
-`;
+</html>`;
 
 const server = http.createServer((req, res) => {
+  // CORS-safe preflight handler for API requests from the same origin
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Dashboard-Token'
+    });
+    res.end();
+    return;
+  }
+
+  // POST /api/bot/action — control actions: start|stop|reconnect
+  if (req.method === 'POST' && req.url === '/api/bot/action') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const token = req.headers['x-dashboard-token'] || req.headers['x-dashboard-token'.toLowerCase()];
+        if (DASHBOARD_TOKEN && token !== DASHBOARD_TOKEN) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'invalid token' }));
+          return;
+        }
+
+        const payload = body ? JSON.parse(body) : {};
+        const action = payload.action;
+        if (!action) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'missing action' }));
+          return;
+        }
+
+        if (action === 'reconnect') {
+          if (botModule && botModule.createBot) {
+            botModule.createBot();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'reconnect triggered' }));
+            return;
+          }
+        }
+
+        if (action === 'start') {
+          if (botModule && botModule.createBot) {
+            botModule.createBot();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'start triggered' }));
+            return;
+          }
+        }
+
+        if (action === 'stop') {
+          try {
+            if (botModule && botModule.bot && botModule.bot.end) {
+              botModule.bot.end();
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ message: 'stop triggered' }));
+              return;
+            }
+          } catch (e) {}
+        }
+
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'unknown action' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'server error', details: err.message }));
+      }
+    });
+    return;
+  }
+
+  // GET /api/metrics
+  if (req.method === 'GET' && req.url === '/api/metrics') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(METRICS));
+    return;
+  }
+
   if (req.method === 'GET' && (req.url === '/' || req.url === '/index')) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(htmlTemplate);
@@ -662,7 +395,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && req.url === '/api/bot') {
     const botStatus = botModule.getBotStatus();
-    const consoleLogs = botModule.getConsoleLogs();
+    const consoleLogs = botModule.getConsoleLogs ? botModule.getConsoleLogs() : [];
 
     const info = {
       status: botStatus,
