@@ -9,7 +9,10 @@ const MAX_LOGS = 100;
 const SERVER = {
     host: 'Ghopghip.aternos.me',
     port: 33526,
-    username: 'GuardBot'
+    username: 'GuardBot',
+    // Explicit Minecraft version to avoid protocol autodetection issues.
+    // Set this to the Minecraft server version (e.g. '1.26.2').
+    version: '1.26.2'
 };
 
 let bot;
@@ -59,7 +62,8 @@ function createBot() {
             host: SERVER.host,
             port: SERVER.port,
             username: SERVER.username,
-            version: false
+            // Pass explicit version from SERVER config to avoid "Server version not supported" errors
+            version: SERVER.version || false
         });
 
         // Triggers when the bot successfully logs into the server
