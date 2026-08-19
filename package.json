@@ -17,7 +17,8 @@
     "mineflayer": "^4.37.1",
     "minecraft-protocol": "^1.66.2",
     "protodef": "^1.17.0",
-    "debug": "^4.3.4"
+    "debug": "^4.3.4",
+    "prismarine-nbt": "^2.10.0"
   },
   "engines": {
     "node": ">=22"
