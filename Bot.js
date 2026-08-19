@@ -5,14 +5,14 @@ let consoleLogs = [];
 const MAX_LOGS = 100;
 
 // SIMPLE SERVER CONFIGURATION
-// Edit only these three values:
+// Edit only these values:
 const SERVER = {
     host: 'Ghopghip.aternos.me',
     port: 33526,
     username: 'GuardBot',
-    // Explicit Minecraft version to avoid protocol autodetection issues.
-    // Set this to the Minecraft server version (e.g. '1.26.2').
-    version: '1.26.2'
+    // If you know the exact server version, set it here (e.g. '1.21.2' or '1.8.9').
+    // If left undefined or set to 'auto', the bot will try auto-detection and fallbacks
+    version: undefined
 };
 
 let bot;
@@ -54,81 +54,124 @@ function getConsoleLogs() {
     return consoleLogs;
 }
 
-function createBot() {
-    logToConsole(`🤖 Starting bot: Connecting to ${SERVER.host}:${SERVER.port}...`, 'info');
-    
+// Version fallback logic to support both 1.8.x and 1.21.x servers
+const FALLBACK_VERSIONS = ['1.21.2', '1.21.1', '1.21.0', '1.8.9'];
+
+function buildVersionsToTry() {
+    const list = [];
+    if (SERVER.version && SERVER.version !== 'auto') list.push(SERVER.version);
+    // try auto-detect early (false means auto) so modern protocols may be detected by the library
+    list.push(false);
+    // add explicit fallbacks for common targets
+    for (const v of FALLBACK_VERSIONS) list.push(v);
+    // dedupe while preserving order
+    return [...new Set(list)];
+}
+
+function tryConnectWithVersions(versions, index = 0) {
+    if (index >= versions.length) {
+        logToConsole('All version attempts failed. Scheduling reconnect...', 'error');
+        scheduleReconnect();
+        return;
+    }
+
+    const versionToUse = versions[index];
+    logToConsole(`Attempting connection using version: ${versionToUse === false ? 'auto-detect' : versionToUse}`, 'info');
+
     try {
         bot = mineflayer.createBot({
             host: SERVER.host,
             port: SERVER.port,
             username: SERVER.username,
-            // Pass explicit version from SERVER config to avoid "Server version not supported" errors
-            version: SERVER.version || false
+            version: versionToUse
         });
-
-        // Triggers when the bot successfully logs into the server
-        bot.on('spawn', () => {
-            logToConsole('✅ Bot successfully spawned in the world!', 'success');
-            logToConsole(`Bot position: X=${Math.floor(bot.entity.position.x)} Y=${Math.floor(bot.entity.position.y)} Z=${Math.floor(bot.entity.position.z)}`, 'debug');
-            startAntiAFK();
-        });
-
-        // Triggers if the bot is kicked or the server closes
-        bot.on('end', (reason) => {
-            logToConsole(`Bot disconnected. Reason: ${reason}`, 'warning');
-            clearInterval(antiAFKInterval);
-            
-            // Clear existing reconnect timer
-            if (reconnectTimer) {
-                clearTimeout(reconnectTimer);
-            }
-            
-            logToConsole(`🔄 Attempting to reconnect in 15 seconds...`, 'info');
-            reconnectTimer = setTimeout(() => {
-                createBot();
-            }, RECONNECT_DELAY);
-        });
-
-        // Triggers if a connection error happens
-        bot.on('error', (err) => {
-            logToConsole(`Connection error: ${err.message}`, 'error');
-            clearInterval(antiAFKInterval);
-            
-            // Clear existing reconnect timer
-            if (reconnectTimer) {
-                clearTimeout(reconnectTimer);
-            }
-            
-            logToConsole(`🔄 Attempting to reconnect in 15 seconds...`, 'info');
-            reconnectTimer = setTimeout(() => {
-                createBot();
-            }, RECONNECT_DELAY);
-        });
-
-        bot.on('kicked', (reason) => {
-            logToConsole(`Bot was kicked: ${reason}`, 'warning');
-        });
-
-        bot.on('death', () => {
-            logToConsole('Bot died, respawning...', 'warning');
-        });
-
-        bot.on('chat', (username, message) => {
-            if (username === bot.username) return;
-            logToConsole(`Chat [${username}]: ${message}`, 'debug');
-        });
-
     } catch (err) {
-        logToConsole(`Failed to create bot: ${err.message}`, 'error');
-        
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
+        logToConsole(`Failed to create bot with version ${versionToUse}: ${err.message}`, 'error');
+        // If the error mentions unsupported server version, try next
+        if (/Server version .* not supported/i.test(err.message) || /not supported/i.test(err.message)) {
+            logToConsole(`Version ${versionToUse} not supported by client. Trying next fallback...`, 'warning');
+            tryConnectWithVersions(versions, index + 1);
+            return;
         }
-        
-        reconnectTimer = setTimeout(() => {
-            createBot();
-        }, RECONNECT_DELAY);
+        // For other errors, attempt next after short delay
+        setTimeout(() => tryConnectWithVersions(versions, index + 1), 1000);
+        return;
     }
+
+    // Wire up event handlers
+    bot.once('spawn', () => {
+        logToConsole('✅ Bot successfully spawned in the world!', 'success');
+        try {
+            logToConsole(`Bot position: X=${Math.floor(bot.entity.position.x)} Y=${Math.floor(bot.entity.position.y)} Z=${Math.floor(bot.entity.position.z)}`, 'debug');
+        } catch (e) {
+            // ignore
+        }
+        startAntiAFK();
+    });
+
+    bot.on('end', (reason) => {
+        logToConsole(`Bot disconnected. Reason: ${reason}`, 'warning');
+        clearInterval(antiAFKInterval);
+        // If disconnection was due to unsupported protocol, try next version
+        if (typeof reason === 'string' && /Server version .* not supported/i.test(reason)) {
+            logToConsole('Server/client protocol mismatch detected. Trying next fallback version...', 'info');
+            tryConnectWithVersions(versions, index + 1);
+            return;
+        }
+        scheduleReconnect();
+    });
+
+    bot.on('error', (err) => {
+        logToConsole(`Connection error: ${err.message}`, 'error');
+        clearInterval(antiAFKInterval);
+
+        // If the error explicitly states server version is not supported, try next version
+        if (err && err.message && /Server version .* not supported/i.test(err.message)) {
+            logToConsole('Server version not supported by this client version. Trying next fallback...', 'warning');
+            // destroy current bot (some implementations need cleanup)
+            try { bot.end && bot.end(); } catch (e) {}
+            tryConnectWithVersions(versions, index + 1);
+            return;
+        }
+
+        // Handle connection refused quickly, then retry same index (server maybe offline)
+        if (err.code === 'ECONNREFUSED') {
+            logToConsole('Connection refused (ECONNREFUSED). Will retry the same version after delay.', 'warning');
+            setTimeout(() => tryConnectWithVersions(versions, index), RECONNECT_DELAY);
+            return;
+        }
+
+        // For other errors, schedule a reconnect with fallback sequence reset
+        scheduleReconnect();
+    });
+
+    bot.on('kicked', (reason) => {
+        logToConsole(`Bot was kicked: ${reason}`, 'warning');
+    });
+
+    bot.on('death', () => {
+        logToConsole('Bot died, respawning...', 'warning');
+    });
+
+    bot.on('chat', (username, message) => {
+        if (username === bot.username) return;
+        logToConsole(`Chat [${username}]: ${message}`, 'debug');
+    });
+}
+
+function scheduleReconnect() {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    logToConsole(`🔄 Attempting to reconnect in ${RECONNECT_DELAY / 1000} seconds...`, 'info');
+    reconnectTimer = setTimeout(() => {
+        const versions = buildVersionsToTry();
+        tryConnectWithVersions(versions, 0);
+    }, RECONNECT_DELAY);
+}
+
+function createBot() {
+    logToConsole(`🤖 Starting bot: Connecting to ${SERVER.host}:${SERVER.port}...`, 'info');
+    const versions = buildVersionsToTry();
+    tryConnectWithVersions(versions, 0);
 }
 
 // Simulated human activity to bypass basic idle detection
@@ -162,7 +205,8 @@ function startAntiAFK() {
                     break;
 
                 case 'swingArm':
-                    bot.swingArm('right');
+                    // some older versions use swingArm differently but mineflayer normalizes it
+                    try { bot.swingArm('right'); } catch (e) { /* ignore */ }
                     logToConsole('Anti-AFK: Swinging arm', 'debug');
                     break;
             }
