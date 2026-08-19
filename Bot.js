@@ -10,9 +10,8 @@ const SERVER = {
     host: 'Ghopghip.aternos.me',
     port: 33526,
     username: 'GuardBot',
-    // If you know the exact server version, set it here (e.g. '1.21.2' or '1.8.9').
-    // If left undefined or set to 'auto', the bot will try auto-detection and fallbacks
-    version: undefined
+    // Force a supported protocol first; set to 'auto' or undefined to allow library auto-detect.
+    version: '1.21.11'
 };
 
 let bot;
@@ -55,7 +54,7 @@ function getConsoleLogs() {
 }
 
 // Version fallback logic to support both 1.8.x and 1.21.x servers
-const FALLBACK_VERSIONS = ['1.21.2', '1.21.1', '1.21.0', '1.8.9'];
+const FALLBACK_VERSIONS = ['1.21.11', '1.21.2', '1.21.1', '1.21.0', '1.8.9'];
 
 function buildVersionsToTry() {
     const list = [];
@@ -240,6 +239,26 @@ function getBotStatus() {
         gameMode: bot.game ? bot.game.mode : null
     };
 }
+
+// Global safety net: avoid process crash on unexpected async errors from libraries
+process.on('uncaughtException', (err) => {
+  try {
+    logToConsole(`Uncaught exception: ${err && err.stack ? err.stack : err}`, 'error');
+  } catch (e) {
+    console.error('Failed to log uncaughtException to console logs', e);
+  }
+  // attempt to reconnect after a short delay
+  setTimeout(scheduleReconnect, 2000);
+});
+
+process.on('unhandledRejection', (reason) => {
+  try {
+    logToConsole(`Unhandled promise rejection: ${reason}`, 'error');
+  } catch (e) {
+    console.error('Failed to log unhandledRejection to console logs', e);
+  }
+  setTimeout(scheduleReconnect, 2000);
+});
 
 // Start the bot
 logToConsole('🚀 Bot Service Initializing...', 'info');
